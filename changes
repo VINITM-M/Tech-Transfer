@@ -1,335 +1,3 @@
-
-import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  MRT_ColumnDef,
-} from "material-react-table";
-
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import "./Tracker.css";
-
-type Row = {
-  Column1: string;
-  Column2: string;
-  Column3: string;
-  Column4: string;
-  Column5: string;
-  Column6: string;
-};
-
-const Tracker = ({ setLoader }: any) => {
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
-
-  const data = useMemo<Row[]>(
-    () => [
-      {
-        Column1: "1",
-        Column2: "12",
-        Column3: "321",
-        Column4: "Phase-I",
-        Column5: "3/12/2025 03:38 PM",
-        Column6: "View",
-      },
-    ],
-    []
-  );
-
-  const columns = useMemo<MRT_ColumnDef<Row>[]>(
-    () => [
-      { header: "Serial No", accessorKey: "Column1" },
-      { header: "Tech Transfer ID", accessorKey: "Column2" },
-      { header: "Project ID", accessorKey: "Column3" },
-      { header: "Phase of Molecules", accessorKey: "Column4" },
-      { header: "Shared On", accessorKey: "Column5" },
-      {
-        header: "Action",
-        accessorKey: "Column6",
-        Cell: ({ row }) => {
-          const rowData = row.original;
-          return (
-            <span
-              className="action-btn"
-              onClick={() => {
-                setSelectedRow(rowData);
-                setOpenModal(true);
-              }}
-              title="View Status"
-              role="button"
-              aria-label={`View status for Tech Transfer ID ${rowData.Column2}`}
-            >
-              <VisibilityIcon />
-            </span>
-          );
-        },
-      },
-    ],
-    []
-  );
-
-  const table = useMaterialReactTable({
-    columns,
-    data,
-    enableStickyHeader: true,
-    muiTableContainerProps: { sx: { maxHeight: 400 } },
-  });
-
-  return (
-    <div className="container-fluid">
-      <Link className="active_breadcrumb" to={"/dashboard"}>
-        Dashboard
-      </Link>
-      {" / "}
-      <span>Tracker</span>
-
-      <div className="colorbox p-3">
-        <div className="row">
-          <div className="col-12">
-            <div className="card cus-Table mt-3">
-              <h5>Tracker</h5>
-              <MaterialReactTable table={table} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {openModal && selectedRow && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <button className="modal-close" onClick={() => setOpenModal(false)}>
-              ✕
-            </button>
-
-            <h4 className="modal-title">Status Breakdown</h4>
-
-            <div className="chip-group">
-              <span className="chip chip-blue">
-                Tech Transfer ID: {selectedRow.Column2}
-              </span>
-              <span className="chip chip-yellow">
-                Project ID: {selectedRow.Column3}
-              </span>
-              <span className="chip chip-green">
-                Phase: {selectedRow.Column4}
-              </span>
-              <span className="chip chip-red">
-                Shared On: {selectedRow.Column5}
-              </span>
-            </div>
-
-            <div className="table-responsive">
-              <table className="table table-bordered table-sm">
-                <thead>
-                  <tr>
-                    <th>Stream</th>
-                    <th>Total Required</th>
-                    <th>Yet to Initiate</th>
-                    <th className="text-warning">Draft</th>
-                    <th className="text-primary">Review</th>
-                    <th className="text-success">Approved</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>PR&amp;D</td>
-                    <td>9</td>
-                    <td>1</td>
-                    <td className="text-warning">1</td>
-                    <td className="text-primary">7</td>
-                    <td className="text-success">2</td>
-                  </tr>
-                  <tr>
-                    <td>AR&amp;D</td>
-                    <td>10</td>
-                    <td>4</td>
-                    <td className="text-warning">4</td>
-                    <td className="text-primary">1</td>
-                    <td className="text-success">1</td>
-                  </tr>
-                  <tr>
-                    <td>PE</td>
-                    <td>2</td>
-                    <td>0</td>
-                    <td className="text-warning">2</td>
-                    <td className="text-primary">0</td>
-                    <td className="text-success">0</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-primary" onClick={() => setOpenModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default Tracker;
-
-/* Breadcrumb */
-.active_breadcrumb {
-  color: #1e40af;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-/* Container */
-.container-fluid {
-  padding: 20px;
-}
-
-/* Card / Table wrapper */
-.cus-Table {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Action icon button inside table cell */
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  transition: background 0.2s ease;
-}
-
-.action-btn:hover {
-  background: #f3f4f6;
-}
-
-.action-btn svg {
-  font-size: 25px;
-  color: #1e40af;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  z-index: 9999;
-}
-
-.modal-content {
-  background: #fff;
-  width: 100%;
-  max-width: 900px;
-  border-radius: 12px;
-  position: relative;
-  padding: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-.modal-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: transparent;
-  font-size: 24px;
-  border: none;
-  cursor: pointer;
-  color: #333;
-}
-
-.modal-title {
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-/* Chips */
-.chip-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.chip {
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.chip-blue {
-  background: #e0e7ff;
-  color: #1e40af;
-}
-
-
-
-/* ===== Loader Dialog (Home.tsx) ===== */
-
-.loader-dialog-paper {
-  border-radius: 12px !important;
-  padding: 20px !important;
-  width: 320px !important;
-}
-
-/* Close button at top-right of dialog */
-.dialog-close-btn {
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-}
-
-/* Dialog message text */
-.loader-dialog-text {
-  font-size: 16px;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-/* Animated dots below the message */
-.dots-animation {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-  justify-content: center;
-}
-
-.dots-animation span {
-  width: 10px;
-  height: 10px;
-  background: #00d084;
-  border-radius: 50%;
-  display: inline-block;
-  animation: bounce 0.6s infinite alternate;
-}
-
-/* staggered delays for subtle rhythm */
-.dots-animation span:nth-child(2) { animation-delay: 0.2s; }
-.dots-animation span:nth-child(3) { animation-delay: 0.4s; }
-.dots-animation span:nth-child(4) { animation-delay: 0.6s; }
-
-@keyframes bounce {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-8px); }
-}
-
-
-.loader-restore-btn {
-  position: fixed !important;
-  top: 90px !important;
-  right: 30px !important;
-  z-index: 9999 !important;
-  padding: 0 !important; 
-}
-
 import React, { useEffect, useState } from 'react';
 import Navbar from '../Navbar';
 import Sidebar from '../Sidebar';
@@ -338,15 +6,14 @@ import LogoutConfirmationCard from './LogoutConfirmationCard';
 import { Dialog, DialogContent, IconButton, CircularProgress } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-import '../Tracker/Tracker.css'; 
-
 const Home = (props: any) => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [state, setState] = useState({
     logoutCardVisibility: '',
     optionsCard: false,
   });
 
-  // Dialog controls
   const [openDialog, setOpenDialog] = useState(false);
   const [minimized, setMinimized] = useState(false);
 
@@ -362,9 +29,14 @@ const Home = (props: any) => {
 
   return (
     <>
-      <Navbar />
-      <Sidebar />
-      <section className="p_Container_full section_container">
+      <Navbar onToggleSidebar={() => setSidebarOpen((p) => !p)} />
+      <Sidebar hidden={!sidebarOpen} />
+
+      <section
+        className={`section_container ${
+          sidebarOpen ? 'p_Container' : 'p_Container_full'
+        }`}
+      >
         <Outlet />
       </section>
 
@@ -373,12 +45,9 @@ const Home = (props: any) => {
           open
           onClose={() => setMinimized(true)}
           hideBackdrop
-          PaperProps={{
-            className: 'loader-dialog-paper',
-          }}
+          PaperProps={{ className: 'loader-dialog-paper' }}
         >
           <IconButton
-            aria-label="close"
             onClick={() => setMinimized(true)}
             className="dialog-close-btn"
           >
@@ -389,27 +58,23 @@ const Home = (props: any) => {
             <p className="loader-dialog-text">
               Connecting to Dochub, Updating the documents …
             </p>
+
             <div className="dots-animation">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
+              <span></span><span></span><span></span><span></span>
             </div>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Spinner-only UI when minimized during loading (click to restore dialog) */}
       {props.loading && minimized && (
         <IconButton
-          aria-label="restore-dialog"
+          className="loader-restore-btn"
           onClick={() => {
             setMinimized(false);
             setOpenDialog(true);
           }}
-          className="loader-restore-btn"
         >
-          <CircularProgress size={32} color="primary" />
+          <CircularProgress size={32} />
         </IconButton>
       )}
 
@@ -427,272 +92,183 @@ export default Home;
 import React, { useEffect, useState } from 'react';
 import companyLogo from '../assets/images/companyLogo.svg';
 import homoLogo from '../assets/images/home1.svg';
-import userLogo from '../assets/images/user1.svg';
-import Notification from '../assets/images/notification.svg';
-import msds from '../assets/images/msds.png';
 import bars from '../assets/images/bars.png';
 import { Link, useNavigate } from 'react-router-dom';
 import ProfileCard from './Home/ProfileCard';
-import $ from 'jquery';
 
-const Navbar = () => {
+const Navbar = ({ onToggleSidebar }: any) => {
   const navigate = useNavigate();
 
   const [state, setState] = useState({
     username: '',
-    userrole: '',
     tagName: '',
   });
 
-  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
-
   useEffect(() => {
-    let userName = sessionStorage.getItem('username');
-    let userRole = sessionStorage.getItem('userrole');
-    let department = sessionStorage.getItem('department');
-    let tagName: any = userName;
-    if (userRole === 'Process Owner') {
-      switch (department) {
-        case 'ARD':
-          tagName = tagName + ' | AR&D';
-          break;
-        case 'PRD':
-          tagName = tagName + ' | PR&D';
-          break;
-        default:
-          break;
-      }
-    }
-    if (userName) {
-      
-      const [firstName, lastName] = userName.split(' ');
-    
-      const initials = `${firstName.charAt(0).toUpperCase()}${lastName ? ` ${lastName.charAt(0).toUpperCase()}` : ''}`;
-      setState((prev: any) => {
-        return {
-          ...prev,
-          username: initials,
-          tagName: tagName,
-        };
-      });
-    } else {
+    const userName = sessionStorage.getItem('username');
+    const userRole = sessionStorage.getItem('userrole');
+    const dept = sessionStorage.getItem('department');
+
+    if (!userName) {
       sessionStorage.clear();
       navigate('/login');
+      return;
     }
+
+    let tag = userName;
+    if (userRole === 'Process Owner') {
+      if (dept === 'ARD') tag += ' | AR&D';
+      if (dept === 'PRD') tag += ' | PR&D';
+    }
+
+    const [f, l] = userName.split(' ');
+    setState({
+      username: `${f[0]}${l ? ' ' + l[0] : ''}`.toUpperCase(),
+      tagName: tag,
+    });
   }, []);
-
-  const openProfileModal = () => {
-    setProfileModalOpen(true);
-  };
-
-  const toggleSidebar = () => {
-    console.log('NavbarFUn');
-    $('.p_sideNav').toggleClass('d-none');
-    $('.section_container')
-      .toggleClass('p_Container_full')
-      .toggleClass('p_Container');
-  };
-
-  const navigateHome = () => {
-    navigate('/dashboard');
-  };
 
   return (
     <>
       <nav className="header">
         <div className="row">
-          <div className="col-8 d-flex position-relative align-items-center">
-            <span
-              className="bars openbtn"
-              id="menuNavigate"
-              onClick={toggleSidebar}
-            >
-              <img src={bars} alt="" />
+          <div className="col-8 d-flex align-items-center">
+
+            <span className="bars" onClick={onToggleSidebar}>
+              <img src={bars} alt="menu" />
             </span>
 
             <span className="logo">
-              <img src={companyLogo} alt="" />
-            </span>
-            <span title="Logo" className="mainLogo">
-              <h5>Tech Transfer</h5>
+              <img src={companyLogo} alt="logo" />
             </span>
 
-            <Link to="/dashboard" className="homee" onClick={navigateHome}>
+            <Link to="/dashboard" className="homee">
               <span className="home">
-                {' '}
-                <img src={homoLogo} alt="Home" />
-                Home
+                <img src={homoLogo} alt="Home" /> Home
               </span>
             </Link>
-          </div>
-          <div className="col text-right userDetails d-flex justify-content-end align-items-center">
-            <div
-              className="dropdown-toggle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <div className="admin">
-                <div className="usermain">
-                  <p>{state.username}</p>
-                </div>
 
-                <span> {state.tagName}</span>
+          </div>
+
+          <div className="col d-flex justify-content-end align-items-center userDetails">
+            <div className="admin">
+              <div className="usermain">
+                <p>{state.username}</p>
               </div>
-            </div>{' '}
-            <ul className="dropdown-menu">
-              <li>
-                <a
-                  className="dropdown-item profile"
-                  role="button"
-                  data-bs-toggle="modal"
-                  data-bs-target="#profileModal"
-                  onClick={openProfileModal}
-                >
-                  <span className="fa fa-user-circle"></span> Profile
-                </a>
-              </li>
-              <li>
-                <a
-                  role="button"
-                  data-bs-toggle="modal"
-                  data-bs-target="#logoutmodal"
-                  className="dropdown-item logout"
-                >
-                  <span className="fa fa-power-off"></span> Logout
-                </a>
-              </li>
-            </ul>
+              <span>{state.tagName}</span>
+            </div>
           </div>
         </div>
       </nav>
+
       <ProfileCard />
     </>
   );
 };
 
 export default Navbar;
-import React, { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Home from './components/Home/Home';
-import Login from './components/Authentication/Login';
-import Dashboard from './components/Home/Dashboard';
-import Masters from './components/Home/Masters';
-import Users from './components/Home/Users';
-import PrivateRoute from './components/Authentication/PrivateRoute';
-import MsdsComponent from './components/Home/MsdsComponent';
-import Transaction from './components/Home/Transaction/Transaction';
-import ConfigurationMaster from './components/Configurations/ConfigurationMaster';
-import TransactionLink from './components/Home/Transaction/TransactionLink';
-import NoUrlFound from './components/NoUrlFound';
-import SharingHistory from './components/SharingHistory/SharingHistory';
-import Healthcheck from './components/Authentication/Healthcheck';
 
-// ⭐ IMPORT TRACKER FROM CORRECT FOLDER
-import Tracker from './components/Tracker/Tracker';
 
-const App = () => {
-  const [loading, setLoading] = useState(false);
+import React from "react";
+import { Link } from "react-router-dom";
+import folderIcon from "../assets/images/master.svg";
+import adminIcon from "../assets/images/admin.svg";
+import logoutIcon from "../assets/images/po.svg";
+import msdsIcon from "../assets/images/msds.png";
+import sharingIcon from "../assets/images/sharinghistory.svg";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+
+const Sidebar = ({ hidden }: { hidden: boolean }) => {
+  const role = sessionStorage.getItem("userrole");
 
   return (
-    <div>
-      <Routes>
+    <aside className={`p_sideNav ${hidden ? 'hidden' : ''}`}>
+      <div className="main">
 
-        <Route path="/login" element={<Login />} />
+        {role === "System Owner-Admin" && (
+          <>
+            <Link to="/masters"><img src={folderIcon} /> Masters</Link>
+            <Link to="/users"><img src={adminIcon} /> Users</Link>
+            <Link to="/Configuration"><img src={folderIcon} /> Configuration</Link>
+            <Link to="/SharingHistory"><img src={sharingIcon} /> Sharing History</Link>
+            <Link to="/Tracker"><AnalyticsIcon /> Tracker</Link>
+          </>
+        )}
 
-        <Route
-          path="/transactionLink/:projectCode/:moleculePhase/:projectName"
-          element={<TransactionLink />}
-        />
+        {(role === "Process Owner" || role === "QA Approver") && (
+          <>
+            <Link to="/msds"><img src={msdsIcon} /> MSDS</Link>
+            <Link to="/SharingHistory"><img src={sharingIcon} /> Sharing History</Link>
+          </>
+        )}
+      </div>
 
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Home loading={loading} />
-            </PrivateRoute>
-          }
-        >
-
-          <Route
-            path="dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="masters"
-            element={
-              <PrivateRoute>
-                <Masters setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="users"
-            element={
-              <PrivateRoute>
-                <Users setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="msds"
-            element={
-              <PrivateRoute>
-                <MsdsComponent setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="Configuration"
-            element={
-              <PrivateRoute>
-                <ConfigurationMaster setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="SharingHistory"
-            element={
-              <PrivateRoute>
-                <SharingHistory setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          {/* ⭐ TRACKER ROUTE HERE */}
-          <Route
-            path="Tracker"
-            element={
-              <PrivateRoute>
-                <Tracker setLoader={setLoading} />
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="transaction/:projectCode/:moleculePhase/:ttType/:projectName"
-            element={
-              <PrivateRoute>
-                <Transaction setLoading={setLoading} loading={loading} />
-              </PrivateRoute>
-            }
-          />
-
-        </Route>
-
-        <Route path="*" element={<NoUrlFound />} />
-
-      </Routes>
-    </div>
+      <button className="logout" data-bs-toggle="modal" data-bs-target="#logoutmodal">
+        <img src={logoutIcon} /> Logout
+      </button>
+    </aside>
   );
 };
 
-export default App;
+export default Sidebar;
+
+
+/* ---- SIDEBAR ---- */
+.p_sideNav {
+  width: 220px;
+  position: fixed;
+  top: 56px;
+  left: 0;
+  height: calc(100vh - 56px);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  z-index: 10;
+}
+
+.p_sideNav.hidden {
+  display: none;
+}
+
+.p_sideNav a {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: #333;
+}
+
+/* ---- CONTAINER ---- */
+.p_Container {
+  margin-left: 220px;
+  padding-top: 90px;
+}
+
+.p_Container_full {
+  margin-left: 0;
+  padding-top: 90px;
+}
+
+/* ---- LOADER ---- */
+.loader-dialog-paper {
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dots-animation {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.dots-animation span {
+  width: 10px;
+  height: 10px;
+  background: #00d084;
+  border-radius: 50%;
+  animation: bounce .6s infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
