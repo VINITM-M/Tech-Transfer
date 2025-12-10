@@ -1,35 +1,190 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
+import './sidebar.css';
+import { Link } from 'react-router-dom';
+import folderIcon from '../assets/images/master.svg';
+import adminIcon from '../assets/images/admin.svg';
+import logoutIcon from '../assets/images/po.svg';
+import msdsOptionIcon from '../assets/images/msds.png';
+import sharinghistory from '../assets/images/sharinghistory.svg';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+
+const Sidebar = () => {
+  const userRole = sessionStorage.getItem('userrole');
+
+  return (
+    <aside className="p_sideNav">
+      <div className="main">
+        
+        {userRole === 'System Owner-Admin' && (
+          <>
+            <div className="btn-group dropend" title="Masters">
+              <button>
+                <Link to="/masters">
+                  <img src={folderIcon} alt="Masters" className="cursor__option" />
+                </Link>
+              </button>
+            </div>
+
+            <div className="btn-group dropend" title="Create User">
+              <button>
+                <Link to="/users">
+                  <img src={adminIcon} alt="Create User" className="cursor__option" />
+                </Link>
+              </button>
+            </div>
+
+            <div className="btn-group dropend" title="Plant Configuration">
+              <button>
+                <Link to="/Configuration">
+                  <img src={folderIcon} alt="Plant Configuration" className="cursor__option" />
+                </Link>
+              </button>
+            </div>
+
+            <div className="btn-group dropend" title="Sharing History">
+              <button>
+                <Link to="/SharingHistory">
+                  <img src={sharinghistory} alt="Sharing History" className="cursor__option" />
+                </Link>
+              </button>
+            </div>
+
+            <div className="btn-group dropend" title="Tracker">
+              <button>
+                <Link to="/Tracker">
+                  <AnalyticsIcon style={{ fontSize: 30, color: '#1e40af' }} />
+                </Link>
+              </button>
+            </div>
+          </>
+        )}
+
+        
+        {(userRole === 'Process Owner' || userRole === 'QA Approver') && (
+          <div>
+            <div className="btn-group dropend" title="MSDS Summary">
+              <button>
+                <Link to="/msds">
+                  <img src={msdsOptionIcon} alt="MSDS Summary" className="msds" />
+                </Link>
+              </button>
+            </div>
+
+            <div className="btn-group dropend" title="Sharing History">
+              <button>
+                <Link to="/SharingHistory">
+                  <img src={sharinghistory} alt="Sharing History" className="cursor__option" />
+                </Link>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+
+      <a
+        role="button"
+        data-bs-toggle="modal"
+        data-bs-target="#logoutmodal"
+        className="logout"
+        title="Logout"
+      >
+        <img src={logoutIcon} alt="Logout" />
+      </a>
+    </aside>
+  );
+};
+
+export default Sidebar;
+
+
+import React, { useEffect, useState } from 'react';
 import Navbar from '../Navbar';
 import Sidebar from '../Sidebar';
 import { Outlet } from 'react-router-dom';
 import LogoutConfirmationCard from './LogoutConfirmationCard';
+import { Dialog, DialogContent, IconButton, CircularProgress } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+
+import '../Tracker/Tracker.css'; 
 
 const Home = (props: any) => {
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [loadingClass, setLoadingClass] = useState('page-loader');
+  const [state, setState] = useState({
+    logoutCardVisibility: '',
+    optionsCard: false,
+  });
+
+  // Dialog controls
+  const [openDialog, setOpenDialog] = useState(false);
+  const [minimized, setMinimized] = useState(false);
 
   useEffect(() => {
-    setLoadingClass(props.loading ? 'page-loader' : 'd-none');
+    if (props.loading) {
+      setOpenDialog(true);
+      setMinimized(false);
+    } else {
+      setOpenDialog(false);
+      setMinimized(false);
+    }
   }, [props.loading]);
 
   return (
     <>
-      <div className={loadingClass}>
-        <div className="spinner"></div>
-        <div className="txt">LOADING</div>
-      </div>
-
-      <Navbar toggleSidebar={() => setShowSidebar(prev => !prev)} />
-
-      {showSidebar && <Sidebar />}
-
-      <section className="section_container">
+      <Navbar />
+      <Sidebar />
+      <section className="p_Container_full section_container">
         <Outlet />
       </section>
 
+      {props.loading && openDialog && !minimized && (
+        <Dialog
+          open
+          onClose={() => setMinimized(true)}
+          hideBackdrop
+          PaperProps={{
+            className: 'loader-dialog-paper',
+          }}
+        >
+          <IconButton
+            aria-label="close"
+            onClick={() => setMinimized(true)}
+            className="dialog-close-btn"
+          >
+            <CloseIcon />
+          </IconButton>
+
+          <DialogContent>
+            <p className="loader-dialog-text">
+              Connecting to Dochub, Updating the documents …
+            </p>
+            <div className="dots-animation">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Spinner-only UI when minimized during loading (click to restore dialog) */}
+      {props.loading && minimized && (
+        <IconButton
+          aria-label="restore-dialog"
+          onClick={() => {
+            setMinimized(false);
+            setOpenDialog(true);
+          }}
+          className="loader-restore-btn"
+        >
+          <CircularProgress size={32} color="primary" />
+        </IconButton>
+      )}
+
       <LogoutConfirmationCard
-        logoutCardVisibility=""
-        cardClose={() => {}}
+        logoutCardVisibility={state.logoutCardVisibility}
+        cardClose={setState}
       />
     </>
   );
@@ -37,136 +192,148 @@ const Home = (props: any) => {
 
 export default Home;
 
-
 import React, { useEffect, useState } from 'react';
 import companyLogo from '../assets/images/companyLogo.svg';
 import homoLogo from '../assets/images/home1.svg';
+import userLogo from '../assets/images/user1.svg';
+import Notification from '../assets/images/notification.svg';
+import msds from '../assets/images/msds.png';
 import bars from '../assets/images/bars.png';
 import { Link, useNavigate } from 'react-router-dom';
 import ProfileCard from './Home/ProfileCard';
+import $ from 'jquery';
 
-const Navbar = ({ toggleSidebar }: any) => {
+const Navbar = () => {
   const navigate = useNavigate();
 
   const [state, setState] = useState({
     username: '',
+    userrole: '',
     tagName: '',
   });
 
-  useEffect(() => {
-    const userName = sessionStorage.getItem('username');
-    const userRole = sessionStorage.getItem('userrole');
-    const department = sessionStorage.getItem('department');
+  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
 
-    if (!userName) {
+  useEffect(() => {
+    let userName = sessionStorage.getItem('username');
+    let userRole = sessionStorage.getItem('userrole');
+    let department = sessionStorage.getItem('department');
+    let tagName: any = userName;
+    if (userRole === 'Process Owner') {
+      switch (department) {
+        case 'ARD':
+          tagName = tagName + ' | AR&D';
+          break;
+        case 'PRD':
+          tagName = tagName + ' | PR&D';
+          break;
+        default:
+          break;
+      }
+    }
+    if (userName) {
+      
+      const [firstName, lastName] = userName.split(' ');
+    
+      const initials = `${firstName.charAt(0).toUpperCase()}${lastName ? ` ${lastName.charAt(0).toUpperCase()}` : ''}`;
+      setState((prev: any) => {
+        return {
+          ...prev,
+          username: initials,
+          tagName: tagName,
+        };
+      });
+    } else {
       sessionStorage.clear();
       navigate('/login');
-      return;
     }
-
-    let tag = userName;
-    if (userRole === 'Process Owner') {
-      if (department === 'ARD') tag += ' | AR&D';
-      if (department === 'PRD') tag += ' | PR&D';
-    }
-
-    const [first, last] = userName.split(' ');
-    setState({
-      username: `${first[0]}${last ? ' ' + last[0] : ''}`,
-      tagName: tag,
-    });
   }, []);
+
+  const openProfileModal = () => {
+    setProfileModalOpen(true);
+  };
+
+  const toggleSidebar = () => {
+    document.body.classList.toggle('hide'); 
+  }; 
+
+  const navigateHome = () => {
+    navigate('/dashboard');
+  };
 
   return (
     <>
       <nav className="header">
         <div className="row">
-          <div className="col-8 d-flex align-items-center">
-            <span className="bars openbtn" onClick={toggleSidebar}>
-              <img src={bars} alt="menu" />
+          <div className="col-8 d-flex position-relative align-items-center">
+            <span
+              className="bars openbtn"
+              id="menuNavigate"
+              onClick={toggleSidebar}
+            >
+              <img src={bars} alt="" />
             </span>
 
-            <img src={companyLogo} alt="logo" />
-            <h5 className="ms-2">Tech Transfer</h5>
+            <span className="logo">
+              <img src={companyLogo} alt="" />
+            </span>
+            <span title="Logo" className="mainLogo">
+              <h5>Tech Transfer</h5>
+            </span>
 
-            <Link to="/dashboard" className="ms-3">
-              <img src={homoLogo} alt="home" /> Home
+            <Link to="/dashboard" className="homee" onClick={navigateHome}>
+              <span className="home">
+                {' '}
+                <img src={homoLogo} alt="Home" />
+                Home
+              </span>
             </Link>
           </div>
+          <div className="col text-right userDetails d-flex justify-content-end align-items-center">
+            <div
+              className="dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              <div className="admin">
+                <div className="usermain">
+                  <p>{state.username}</p>
+                </div>
 
-          <div className="col d-flex justify-content-end align-items-center">
-            <div className="dropdown-toggle" data-bs-toggle="dropdown">
-              <div>
-                <p>{state.username}</p>
-                <span>{state.tagName}</span>
+                <span> {state.tagName}</span>
               </div>
-            </div>
-
+            </div>{' '}
             <ul className="dropdown-menu">
               <li>
-                <a className="dropdown-item" data-bs-toggle="modal" data-bs-target="#profileModal">
-                  Profile
+                <a
+                  className="dropdown-item profile"
+                  role="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#profileModal"
+                  onClick={openProfileModal}
+                >
+                  <span className="fa fa-user-circle"></span> Profile
                 </a>
               </li>
               <li>
-                <a className="dropdown-item" data-bs-toggle="modal" data-bs-target="#logoutmodal">
-                  Logout
+                <a
+                  role="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#logoutmodal"
+                  className="dropdown-item logout"
+                >
+                  <span className="fa fa-power-off"></span> Logout
                 </a>
               </li>
             </ul>
           </div>
         </div>
       </nav>
-
       <ProfileCard />
     </>
   );
 };
 
 export default Navbar;
-
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import folderIcon from '../assets/images/master.svg';
-import adminIcon from '../assets/images/admin.svg';
-import logoutIcon from '../assets/images/po.svg';
-import msdsIcon from '../assets/images/msds.png';
-import sharinghistory from '../assets/images/sharinghistory.svg';
-
-const Sidebar = () => {
-  const role = sessionStorage.getItem('userrole');
-
-  return (
-    <aside className="p_sideNav">
-      <div className="main">
-        {role === 'System Owner-Admin' && (
-          <>
-            <Link to="/masters"><img src={folderIcon} /></Link>
-            <Link to="/users"><img src={adminIcon} /></Link>
-            <Link to="/Configuration"><img src={folderIcon} /></Link>
-            <Link to="/SharingHistory"><img src={sharinghistory} /></Link>
-          </>
-        )}
-
-        {(role === 'Process Owner' || role === 'QA Approver') && (
-          <>
-            <Link to="/msds"><img src={msdsIcon} /></Link>
-            <Link to="/SharingHistory"><img src={sharinghistory} /></Link>
-          </>
-        )}
-      </div>
-
-      <img
-        src={logoutIcon}
-        className="logout"
-        data-bs-toggle="modal"
-        data-bs-target="#logoutmodal"
-      />
-    </aside>
-  );
-};
-
-export default Sidebar;
 
 
