@@ -93,6 +93,9 @@ const Home = (props: any) => {
 export default Home;
 
 
+home.tsx file above 
+
+
 import React from 'react';
 import './sidebar.css';
 import { Link } from 'react-router-dom';
@@ -191,6 +194,7 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+sidebar.tsx fiel above 
 
 
 /* Breadcrumb */
@@ -348,7 +352,7 @@ export default Sidebar;
   z-index: 9999 !important;
   padding: 0 !important; 
 }
-
+tracker,css file above 
 
 body {
   padding-right: 0px !important;
@@ -2799,8 +2803,9 @@ section.section_container,
 body.hide section.section_container,
 body.hide .p_Container_full {
   margin-left: 0px !important;
-}
+} 
 
+inde.css 
 
 import React, { useEffect, useState } from 'react';
 import companyLogo from '../assets/images/companyLogo.svg';
@@ -2945,6 +2950,7 @@ const Navbar = () => {
 };
 
 export default Navbar;
+navbar.tsx 
 
 
 import React, { useMemo, useState } from "react";
@@ -3121,4 +3127,4 @@ const Tracker = ({ setLoader }: any) => {
 };
 
 export default Tracker;
-
+tracker.tsx file 
