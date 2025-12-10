@@ -1,998 +1,369 @@
-import React, { useState, useEffect } from 'react';
-import { ColDef } from 'ag-grid-community';
-import http from '../../http';
-import copyLink from '../../assets/images/link.svg';
-import { Link, useNavigate } from 'react-router-dom';
-import ProcessOwnerARDDashboard from './Dashboard/ProcessOwner 1';
-import QAApproverDashboard from './Dashboard/QAApprover 1';
-import SystemOwnerDashboard from './Dashboard/SystemOwner 1';
-import { useLocation } from 'react-router-dom';
-import axiosInstance from '../../utilities/interceptor';
-import { apiUrls } from '../../utilities/urls';
+/* ===== Breadcrumb (Tracker) ===== */
+.active_breadcrumb {
+  color: #1e40af;
+  text-decoration: none;
+  font-weight: 500;
+}
 
-const Dashboard = ({ setLoader }: any) => {
-  const location = useLocation();
-  const loginResponse = location.state?.loginResponse;
+/* ===== Container for Tracker page ===== */
+.container-fluid {
+  padding: 20px;
+}
 
-  console.log('loginResponse', loginResponse);
+/* ===== Card / Table wrapper ===== */
+.cus-Table {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 
-  let options = {
-    headers: {
-      Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-    },
-  };
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [projectCode, setProjectCode] = useState('');
-  const [moleculePhases, setMoleculePhases] = useState([]);
-  const [techTransferTypes, setTechTransferTypes] = useState([]);
-  const [techTransferPackageData, setTechTransferPackageData] = useState<any[]>(
-    []
-  );
-  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
-  const [selectedTechTransferType, setSelectedTechTransferType] = useState<
-    string | null
-  >(null);
-  const [columnDefs, setColumnDefs] = useState<ColDef[]>([
-    {
-      headerName: 'S.No',
+/* ===== Action icon button inside table cell ===== */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
 
-      valueGetter: (params: any) => {
-        if (params) {
-          return params.node.rowIndex + 1;
-        } else {
-          return 'NA';
-        }
-      },
-      width: 81.1,
-      cellStyle: { textAlign: 'center' },
-    },
-    {
-      headerName: 'ID',
-      field: 'project_id',
-      width: 81.1,
-      filter: true,
-      cellStyle: { textAlign: 'center' },
-    },
-    {
-      headerName: 'Project Code',
-      field: 'project_code',
-      width: 130,
-      filter: true,
-      cellStyle: { textAlign: 'center' },
-    },
-    {
-      headerName: 'Phase of Molecule',
-      field: 'molecule_phase',
-      width: 164,
-      filter: true,
-      cellStyle: { textAlign: 'center' },
-    },
-    {
-      headerName: 'Date',
-      field: 'creation_date',
-      width: 110,
-      filter: true,
-      cellStyle: { textAlign: 'center' },
-    },
-    {
-      headerName: 'Attached',
-      field: 'attachment_percentage',
-      width: 108,
-      filter: true,
+.action-btn:hover {
+  background: #f3f4f6;
+}
 
-      cellStyle: (params: any) => {
-        const percentage = parseFloat(params.value);
-        return percentage === 100
-          ? { color: '#83C00A', fontWeight: 'bold' }
-          : { color: '#FF9200', fontWeight: 'bold' };
-      },
-    },
-    {
-      headerName: 'Status',
-      field: 'status',
-      width: 98,
-      filter: true,
-      cellStyle: { textAlign: 'center' },
-    },
-    {
-      headerName: 'URL',
-      field: 'url',
-      cellRenderer: (params: any) => params.value,
-      width: 90,
-      filter: true,
-      cellStyle: { textAlign: 'center' },
-    },
-  ]);
+.action-btn svg {
+  font-size: 25px;
+  color: #1e40af;
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoader(true);
-        const moleculePhasesResp = await axiosInstance.get(
-          apiUrls.allMoleculePhases,
-          options
-        );
-        setMoleculePhases(moleculePhasesResp.data);
+/* ===== Tracker Modal (scoped to avoid conflict with Bootstrap) ===== */
 
-        const techTransferTypesResp = await axiosInstance.get(
-          apiUrls.allTechTransferTypes,
-          options
-        );
-        setTechTransferTypes(techTransferTypesResp.data);
+.tracker-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 9999;
+}
 
-        const techTransferPackageDataResp = await axiosInstance.get(
-          apiUrls.packages,
-          options
-        );
-        setTechTransferPackageData(techTransferPackageDataResp.data);
+.tracker-modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 900px;
+  border-radius: 12px;
+  position: relative;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
 
-        setLoading(false);
-        setLoader(false);
+.tracker-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
 
-        let prevProjectCode = localStorage.getItem('project_code');
-        let prevMoleculePhase = localStorage.getItem('molecule_phase');
-        let prevTtType = localStorage.getItem('tt_type');
+.tracker-modal-title {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
 
-        if (prevProjectCode && prevMoleculePhase && prevTtType) {
-          let payload: any = {
-            project_code: prevProjectCode,
-            molecule_phase: prevMoleculePhase,
-            tt_type: prevTtType,
-          };
-          if (prevTtType === 'New') {
-            await axiosInstance
-              .post(apiUrls.removeUnsavedData, payload, options)
-              .then((resp: any) => {
-                if (resp.data.message) {
-                  localStorage.clear();
-                }
-                return;
-              })
-              .catch((err: any) => {
-                console.log('removeUnsavedData err', err);
-                return;
-              });
-          } else {
-            await axiosInstance
-              .post(apiUrls.removeUnsavedAddendumData, payload, options)
-              .then((resp: any) => {
-                if (resp.data.message) {
-                  localStorage.clear();
-                }
-                return;
-              })
-              .catch((err: any) => {
-                console.log('removeUnsavedData err', err);
-                return;
-              });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-    fetchData();
-  }, []);
+/* ===== Chips in Tracker modal ===== */
 
-  const [copySuccess, setCopySuccess] = useState<boolean | null>(null);
-  const copyText = (text: string) => {
-    const tempTextArea = document.createElement('textarea');
-    tempTextArea.value = text;
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
 
-    document.body.appendChild(tempTextArea);
-    tempTextArea.select();
+.chip {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+}
 
-    try {
-      const successful = document.execCommand('copy');
-    } catch (err) {
-      console.error('Error copying text:', err);
-    }
+/* base + variants */
+.chip-blue {
+  background: #e0e7ff;
+  color: #1e40af;
+}
 
-    document.body.removeChild(tempTextArea);
-  };
+.chip-yellow {
+  background: #fef3c7;
+  color: #92400e;
+}
 
-  const rowData = techTransferPackageData.map((item) => {
-    const inputDate = new Date(item.creation_date);
-    const year = inputDate.getFullYear();
-    const month = String(inputDate.getMonth() + 1).padStart(2, '0');
-    const day = String(inputDate.getDate()).padStart(2, '0');
-    const formattedDate = `${day}/${month}/${year}`;
+.chip-green {
+  background: #dcfce7;
+  color: #166534;
+}
 
-    return {
-      project_id: item.project_id,
-      project_code: item.project_code,
-      molecule_phase: item.molecule_phase,
-      creation_date: formattedDate,
-      attachment_percentage: `${item.attachment_percentage}%`,
-      status: item.status,
-      url: (
-        <>
-          <button
-            className="btn btn-primary btn-sm minW70"
-            onClick={() => copyText(item.url)}
-          >
-            Copy <img src={copyLink} alt="" />
-          </button>
-        </>
-      ),
-    };
-  });
+.chip-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 
-  const handlePhaseChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedPhase(event.target.value);
-  };
+/* ===== Loader Dialog (Home.tsx) ===== */
 
-  const handleTechTransferTypeChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setSelectedTechTransferType(event.target.value);
-  };
+.loader-dialog-paper {
+  border-radius: 12px !important;
+  padding: 20px !important;
+  width: 320px !important;
+}
 
-  const isNextButtonEnabled =
-    selectedPhase !== null &&
-    selectedTechTransferType !== null &&
-    selectedPhase !== 'select' &&
-    selectedTechTransferType !== 'select';
+/* Close button at top-right of dialog */
+.dialog-close-btn {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
 
-  return (
-    <>
-      {sessionStorage.getItem('userrole') === 'Process Owner' && (
-        <ProcessOwnerARDDashboard setLoader={setLoading} />
-      )}
+/* Dialog message text */
+.loader-dialog-text {
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 10px;
+}
 
-      {sessionStorage.getItem('userrole') === 'System Owner-Admin' && (
-        <SystemOwnerDashboard setLoader={setLoading} />
-      )}
-      {sessionStorage.getItem('userrole') === 'QA Approver' && (
-        <QAApproverDashboard setLoader={setLoading} />
-      )}
-    </>
-  );
-};
+/* Animated dots below the message */
+.dots-animation {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
 
-export default Dashboard;
+.dots-animation span {
+  width: 10px;
+  height: 10px;
+  background: #00d084;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 0.6s infinite alternate;
+}
 
+/* staggered delays for subtle rhythm */
+.dots-animation span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dots-animation span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.dots-animation span:nth-child(4) {
+  animation-delay: 0.6s;
+}
 
-import React, { useEffect, useState } from 'react';
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
 
-const DocumentEditCard = (props: any) => {
-  const [state, setState] = useState({
-    department_name: '',
-    document_name: '',
-    active: true,
-  });
+/* Minimized spinner button (top-right) */
+.loader-restore-btn {
+  position: fixed !important;
+  top: 90px !important;
+  right: 30px !important;
+  z-index: 9999 !important;
+  padding: 0 !important;
+}
 
-  useEffect(() => {
-    setState({
-      department_name: props.data.department_name,
-      document_name: props.data.document_name,
-      active: props.data.active,
-    });
-  }, [props]);
-
-  const handleChange = (name: string, value: string | boolean) => {
-    setState((prev: any) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCheckBox = () => {
-    handleChange('active', !state.active);
-  };
-
-  const saveChanges = () => {
-    props.saveChanges({
-      ...props.data,
-      department_name: state.department_name,
-      document_name: state.document_name,
-      active: state.active,
-    });
-  };
-
-  return (
-    <div className="accordion" id="editAccordion">
-      <div className="accordion-item">
-        <h2 className="accordion-header" id="editAccordionHeader">
-          <button
-            className="accordion-button"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#editAccordionBody"
-            aria-expanded="true"
-            aria-controls="editAccordionBody"
-          >
-            Edit
-          </button>
-        </h2>
-        <div
-          id="editAccordionBody"
-          className="accordion-collapse collapse show"
-          aria-labelledby="editAccordionHeader"
-          data-bs-parent="#editAccordion"
-        >
-          <div className="accordion-body">
-            <div className="mb-3">
-              <label htmlFor="exampleFormControlInput1" className="form-label">
-                Department
-              </label>
-              <select
-                className="form-select mb-3"
-                aria-label=".form-select example"
-                onChange={(e) =>
-                  handleChange('department_name', e.target.value)
-                }
-                value={state.department_name}
-              >
-                <option value="PRD">PRD</option>
-                <option value="ARD">ARD</option>
-                <option value="PE">PE</option>
-              </select>
-            </div>
-
-            <div className="mb-3">
-              <label htmlFor="exampleFormControlInput1" className="form-label">
-                Document Name
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                value={state.document_name}
-                onChange={(e) => handleChange('document_name', e.target.value)}
-              />
-            </div>
-
-            <div className="mb-3">
-              <input
-                type="checkbox"
-                style={{ marginRight: '5px' }}
-                id="exampleFormControlInput1"
-                name="editEnable"
-                checked={state.active}
-                onChange={handleCheckBox}
-              />
-              <label htmlFor="exampleFormControlInput1" className="form-label">
-                Enable
-              </label>
-            </div>
-
-            <div className="accordion-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-bs-toggle="collapse"
-                data-bs-target="#editAccordionBody"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={saveChanges}
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default DocumentEditCard;
-
-
-import React, { useEffect, useRef, useState } from 'react';
-import editIcon from '../../assets/images/edit.png';
-import GridCard from '../../utilities/GridCard';
-import DocumentEditCard from './DocumentEditCard';
-import http from '../../http';
-import { useNavigate } from 'react-router-dom';
-import $ from 'jquery';
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   MaterialReactTable,
   useMaterialReactTable,
   type MRT_ColumnDef,
 } from 'material-react-table';
 
-import Swal from 'sweetalert2';
-import { apiUrls } from '../../utilities/urls';
-import axiosInstance from '../../utilities/interceptor';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import './Tracker.css';
 
-const transformData = (data: any) => {
-  return data.map((item: any) => {
-    const transformedItem = { ...item };
-    if (item.department_name === 'ARD') {
-      transformedItem.department_name = 'AR&D';
-    } else if (item.department_name === 'PRD') {
-      transformedItem.department_name = 'PR&D';
-    }
-    return transformedItem;
-  });
+type Row = {
+  Column1: string;
+  Column2: string;
+  Column3: string;
+  Column4: string;
+  Column5: string;
+  Column6: string;
 };
 
-const DocumentCheckList = (props: any) => {
-  let options = {
-    headers: {
-      Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-    },
-  };
+const Tracker = ({ setLoader }: any) => {
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
 
-  const handleSweetAlert = (
-    titleData: string,
-    textData: string,
-    iconData: string
-  ) => {
-    if (iconData === 'success') {
-      Swal.fire({
-        title: titleData,
-        text: textData,
-        icon: 'success',
-        showConfirmButton: false,
-      });
-    } else {
-      Swal.fire({
-        title: titleData,
-        text: textData,
-        icon: 'error',
-        showConfirmButton: false,
-      });
-    }
-    setTimeout(() => {
-      Swal.close();
-    }, 1500);
-  };
-
-  const accordionRef = useRef<any>(null);
-
-  const navigate = useNavigate();
-  let [state, setState] = useState({
-    documentList: [],
-    departmentList: [],
-    selectedRowIndex: null,
-    updateRow: false,
-    department_name: '',
-    document_name: '',
-    formTitle: '+ Add Document List',
-    formBtnText: 'Add',
-    isUpdateBtnVisible: false,
-    showResetBtn: true,
-    active: true,
-    columnDefs: [
+  const data = useMemo<Row[]>(
+    () => [
       {
-        accessorKey: 'department_name',
-        header: 'Department Name',
-      },
-      {
-        accessorKey: 'document_name',
-        header: 'Document Name',
-      },
-      {
-        accessorKey: 'actions',
-        header: 'Actions',
-        size: 150,
-        Cell: ({ row }: any) => (
-          <button
-            className="editBtn"
-            onClick={(event) => {
-              event.preventDefault();
-              editRow(row, row.index);
-            }}
-          >
-            <img src={editIcon} alt="Edit" />
-          </button>
-        ),
+        Column1: '1',
+        Column2: '12',
+        Column3: '321',
+        Column4: 'Phase-I',
+        Column5: '3/12/2025 03:38 PM',
+        Column6: 'View',
       },
     ],
-    setEditData: {},
-  });
-
-  const [accordianOpenedByEdit, setAccordianOpenedByEdit] =
-    useState<boolean>(false);
-
-  useEffect(() => {
-    debugger;
-    const transformedData = transformData(props.documentList);
-    setState((prev) => ({
-      ...prev,
-      documentList: transformedData,
-      departmentList: props.departmentList,
-    }));
-  }, [props]);
-
-  const toggleDocxAccrodian = () => {
-    const accordianButton = $('.accordion-button');
-    const accordianCard = $('.accordion-collapse');
-    if (accordianButton && accordianCard) {
-      console.log(
-        "accordianButton.attr('aria-expanded')",
-        accordianButton.attr('aria-expanded')
-      );
-      // Toggle aria-expanded attribute
-      const currentAriaValue = accordianButton.attr('aria-expanded');
-      accordianButton.attr(
-        'aria-expanded',
-        currentAriaValue === 'true' ? 'false' : 'true'
-      );
-
-      // Toggle the 'collapsed' class
-      accordianButton.toggleClass('collapsed');
-
-      // If you have additional styles for the expanded state, you can toggle the 'expanded' class
-      accordianButton.toggleClass('expanded');
-
-      accordianCard.toggleClass('show');
-    }
-  };
-
-  const openAccordian = () => {
-    const accordianButton = $('.accordion-button');
-    const accordianCard = $('.accordion-collapse');
-    if (accordianButton && accordianCard) {
-      console.log(
-        "accordianButton.attr('aria-expanded')",
-        accordianButton.attr('aria-expanded')
-      );
-      // Toggle aria-expanded attribute
-      const currentAriaValue = accordianButton.attr('aria-expanded');
-      accordianButton.attr(
-        'aria-expanded',
-        currentAriaValue === 'true' ? 'true' : 'true'
-      );
-
-      // Toggle the 'collapsed' class
-      if (accordianButton.hasClass('collapsed')) {
-        accordianButton.removeClass('collapsed');
-      }
-
-      if (!accordianButton.hasClass('expanded')) {
-        accordianButton.addClass('expanded');
-      }
-
-      if (!accordianCard.hasClass('show')) {
-        accordianCard.toggleClass('show');
-      }
-    }
-  };
-
-  const [buttonDisabled, setButtonDisabled] = useState<boolean | undefined>(
-    true
+    []
   );
 
-  const saveChanges = () => {
-    let userRole = sessionStorage.getItem('userrole');
-    let userName = sessionStorage.getItem('username');
-    let trimmedDocumentName = state.document_name.trim();
-
-    if (state.department_name === '' || state.department_name === 'select') {
-      handleSweetAlert('', 'Department option has to be selected', 'error');
-      return;
-    }
-    if (!trimmedDocumentName) {
-      handleSweetAlert('', 'Document Name is required', 'error');
-      return;
-    }
-
-    if (
-      state.department_name &&
-      trimmedDocumentName &&
-      userRole === 'System Owner-Admin'
-    ) {
-      let payload = {
-        ...state.setEditData,
-        department_name: state.department_name,
-        document_name: trimmedDocumentName,
-        active: state.active,
-        updated_by: userName,
-      };
-      axiosInstance
-        .put(apiUrls.updateDocument, payload, options)
-        .then((resp: any) => {
-          const updatedList = state.documentList.map(
-            (item: any, index: number) => {
-              if (index === state.selectedRowIndex) {
-                return {
-                  ...item,
-                  department_name:
-                    state.department_name === 'ARD'
-                      ? 'AR&D'
-                      : state.department_name === 'PRD'
-                        ? 'PR&D'
-                        : state.department_name,
-                  document_name: trimmedDocumentName,
-                  active: state.active,
-                };
-              }
-              return item;
-            }
+  const columns = useMemo<MRT_ColumnDef<Row>[]>(
+    () => [
+      { header: 'Serial No', accessorKey: 'Column1' },
+      { header: 'Tech Transfer ID', accessorKey: 'Column2' },
+      { header: 'Project ID', accessorKey: 'Column3' },
+      { header: 'Phase of Molecules', accessorKey: 'Column4' },
+      { header: 'Shared On', accessorKey: 'Column5' },
+      {
+        header: 'Action',
+        accessorKey: 'Column6',
+        Cell: ({ row }) => {
+          const rowData = row.original;
+          return (
+            <span
+              className="action-btn"
+              onClick={() => {
+                setSelectedRow(rowData);
+                setOpenModal(true);
+              }}
+              title="View Status"
+              role="button"
+              aria-label={`View status for Tech Transfer ID ${rowData.Column2}`}
+            >
+              <VisibilityIcon />
+            </span>
           );
-
-          console.log('updatedList', updatedList);
-
-          setState((prev: any) => ({
-            ...prev,
-            updateRow: true,
-            documentList: updatedList,
-            formTitle: '+ Add Document List',
-            formBtnText: 'Add',
-            showResetBtn: true,
-            isUpdateBtnVisible: false,
-            active: false,
-            selectedRowIndex: null, // Reset the selected row index
-            setEditData: {},
-          }));
-          handleSweetAlert('', 'Document is updated', 'success');
-          toggleDocxAccrodian();
-          handleReset();
-        })
-        .catch((err: any) => {
-          console.log('updateDocument err', err);
-          props.setLoader(false);
-          handleSweetAlert('', err.response.data.error, 'error');
-          toggleDocxAccrodian();
-          handleReset();
-        });
-    } else {
-      sessionStorage.clear();
-      navigate('/login');
-    }
-  };
-
-  const addDocument = () => {
-    let userRole = sessionStorage.getItem('userrole');
-    let userName = sessionStorage.getItem('username');
-
-    if (userRole !== 'System Owner-Admin') {
-      sessionStorage.clear();
-      navigate('/login');
-      return;
-    }
-
-    const trimmedDocumentName = state.document_name.trim();
-
-    if (state.department_name === '' || state.department_name === 'select') {
-      handleSweetAlert('', 'Department option has to be selected', 'error');
-      return;
-    }
-    if (!trimmedDocumentName) {
-      handleSweetAlert('', 'Document Name is required', 'error');
-      return;
-    }
-
-    //for system owner role: if given department_name and document_name
-    if (state.department_name && trimmedDocumentName) {
-      let department_name = state.department_name;
-      let newDocx: any = {
-        department_name: department_name,
-        document_name: trimmedDocumentName,
-        active: true,
-      };
-      let payload = {
-        department_name: state.department_name,
-        document_name: trimmedDocumentName,
-        created_by: userName,
-      };
-
-      props.setLoader(true);
-      axiosInstance
-        .post(apiUrls.createDocument, payload, options)
-        .then((resp: any) => {
-          if (resp.status === 201) {
-            newDocx['id'] = resp.data.id;
-            if (newDocx.department_name === 'ARD') {
-              newDocx.department_name = 'AR&D';
-            } else if (newDocx.department_name === 'PRD') {
-              newDocx.department_name = 'PR&D';
-            }
-            setState((prev: any) => ({
-              ...prev,
-              documentList: [newDocx, ...state.documentList],
-              formTitle: '+ Add Document List',
-              formBtnText: 'Add',
-              active: true, // Set active to true when adding
-              showResetBtn: true,
-            }));
-            handleReset();
-            toggleDocxAccrodian();
-            handleSweetAlert('', 'Document is added', 'success');
-          }
-        })
-        .catch((err: any) => {
-          console.log('createDocument err', err);
-          handleSweetAlert('', err.response.data.error, 'error');
-          handleReset();
-        });
-      props.setLoader(false);
-    }
-  };
-
-  const reverseTransformDepartmentName = (departmentName: any) => {
-    if (departmentName === 'AR&D') {
-      return 'ARD';
-    } else if (departmentName === 'PR&D') {
-      return 'PRD';
-    }
-    return departmentName;
-  };
-
-  const editRow = (params: any, index: any) => {
-    openAccordian();
-    setAccordianOpenedByEdit(true);
-    setState((prev) => ({
-      ...prev,
-      setEditData: params.original,
-      selectedRowIndex: index,
-      formTitle: '+ Edit Document List',
-      formBtnText: 'Update',
-      showResetBtn: false,
-      department_name: reverseTransformDepartmentName(
-        params.original.department_name
-      ),
-      document_name: params.original.document_name,
-      active: params.original.active || false,
-      isUpdateBtnVisible: true,
-    }));
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
-  };
-
-  useEffect(() => {
-    if (
-      state.updateRow &&
-      (state.selectedRowIndex === 0 || state.selectedRowIndex)
-    ) {
-      setState((prev: any) => ({
-        ...prev,
-        updateRow: false,
-        setEditData: {},
-      }));
-    }
-  }, [state.updateRow]);
-
-  const resetForm = () => {
-    setState((prev: any) => ({
-      ...prev,
-      department_name: '',
-      document_name: '',
-      showResetBtn: true,
-      active: true,
-      buttonDisabled: true,
-    }));
-  };
-
-  const handleReset = () => {
-    resetForm();
-  };
-
-  const [error, setError] = useState('');
-  const isValidInput = (value: string) => {
-    const allowedCharactersRegex = /^[A-Za-z0-9@ _\-()\[\]]*$/;
-    return allowedCharactersRegex.test(value);
-  };
-
-  const handleChange = (name: string, value: string | boolean) => {
-    debugger;
-    if (isValidInput(value as string)) {
-      setError('');
-      setState((prev: any) => ({
-        ...prev,
-        [name]: value,
-      }));
-      if (name === 'active') {
-        setButtonDisabled(undefined);
-      }
-    } else {
-      handleSweetAlert(
-        '',
-        'Invalid input: Only letters, numbers, spaces, and certain characters are allowed.',
-        error
-      );
-    }
-  };
-
-  useEffect(() => {
-    if (
-      state.department_name &&
-      state.document_name &&
-      !accordianOpenedByEdit
-    ) {
-      setButtonDisabled(undefined);
-    } else {
-      setButtonDisabled(true);
-    }
-  }, [state.department_name, state.document_name, accordianOpenedByEdit]);
-
-  const handleCheckBox = () => {
-    handleChange('active', !state.active);
-  };
-
-  const handleClose = () => {
-    debugger;
-    setState((prev: any) => ({
-      ...prev,
-      formTitle: '+ Add Document List',
-      formBtnText: 'Add',
-      showResetBtn: true,
-    }));
-    handleReset();
-  };
-
-  const transformDepartmentName = (departmentName: string) => {
-    if (departmentName === 'ARD') {
-      return 'AR&D';
-    } else if (departmentName === 'PRD') {
-      return 'PR&D';
-    }
-    return departmentName;
-  };
+        },
+      },
+    ],
+    []
+  );
 
   const table = useMaterialReactTable({
-    columns: state.columnDefs,
-    data: state.documentList,
-    enableRowNumbers: true,
+    columns,
+    data,
+    enableStickyHeader: true,
+    muiTableContainerProps: { sx: { maxHeight: 400 } },
   });
 
   return (
-    <div className="colorbox p-3">
-      <div className="row">
-        <div className="col-12">
-          <div className="accordion mt-3" id="accordionPanelsStayOpenExample">
-            <div className="accordion-item">
-              <h2 className="accordion-header" id="panelsStayOpen-headingOne">
-                <button
-                  className="accordion-button collapsed doc-fonts"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#panelsStayOpen-collapseOne"
-                  aria-expanded="true"
-                  aria-controls="panelsStayOpen-collapseOne"
-                  onClick={handleClose}
-                  ref={accordionRef}
-                >
-                  {state.formTitle}
-                </button>
-              </h2>
-              <div
-                id="panelsStayOpen-collapseOne"
-                className="accordion-collapse collapse"
-                aria-labelledby="panelsStayOpen-headingOne"
-              >
-                <div className="accordion-body">
-                  <div className="row">
-                    <div className="col-sm-6">
-                      <div className="mb-3">
-                        <label
-                          htmlFor="exampleFormControlInput1"
-                          className="form-label"
-                        >
-                          Department
-                        </label>
-                        <select
-                          className="form-select mb-3"
-                          aria-label=".form-select example"
-                          name="department_name"
-                          value={state.department_name}
-                          onChange={(e) =>
-                            handleChange('department_name', e.target.value)
-                          }
-                          disabled={!state.active}
-                        >
-                          <option>select</option>
-                          {state.departmentList.map((each: any) => (
-                            <option key={each} value={each}>
-                              {transformDepartmentName(each)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="mb-3">
-                        {state.formBtnText === 'Update' && (
-                          <div className="mb-3">
-                            <input
-                              type="checkbox"
-                              style={{ marginRight: '5px' }}
-                              id="exampleFormControlInput1"
-                              name="editEnable"
-                              checked={state.active} // Display the current value when editing
-                              onChange={handleCheckBox}
-                            />
-                            <label
-                              htmlFor="exampleFormControlInput1"
-                              className="form-label"
-                            >
-                              Enable
-                            </label>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-sm-6">
-                      <div className="mb-3">
-                        <label
-                          htmlFor="exampleFormControlInput1"
-                          className="form-label"
-                        >
-                          Document Name
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="document_name"
-                          value={state.document_name}
-                          onChange={(e) =>
-                            handleChange('document_name', e.target.value)
-                          }
-                          disabled={!state.active}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <hr />
-                  <div className="text-right mButton">
-                    {state.showResetBtn && (
-                      <button
-                        className="btn btn-outline-primary right-spacing"
-                        onClick={handleReset}
-                      >
-                        Reset
-                      </button>
-                    )}
-                    {state.formBtnText === 'Update' && (
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary right-spacing"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#panelsStayOpen-collapseOne"
-                        aria-expanded="false"
-                        onClick={handleClose}
-                      >
-                        Close
-                      </button>
-                    )}
-                    {state.showResetBtn && (
-                      <button
-                        className="btn btn-primary ml-3"
-                        onClick={addDocument}
-                      >
-                        Add
-                      </button>
-                    )}
-                    {state.formBtnText === 'Update' && (
-                      <button
-                        type="button"
-                        className="btn btn-primary ml-3"
-                        onClick={saveChanges}
-                      >
-                        Update
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+    <div className="container-fluid">
+      <Link className="active_breadcrumb" to={'/dashboard'}>
+        Dashboard
+      </Link>
+      {' / '}
+      <span>Tracker</span>
+
+      <div className="colorbox p-3">
+        <div className="row">
+          <div className="col-12">
+            <div className="card cus-Table mt-3">
+              <h5>Tracker</h5>
+              <MaterialReactTable table={table} />
             </div>
-          </div>
-          <div className="card cus-Table mt-3">
-            <h2 className="accordion-header" id="panelsStayOpen-headingOne">
-              <h5>List of Document Lists</h5>
-            </h2>
-            <MaterialReactTable table={table} />
           </div>
         </div>
       </div>
+
+      {openModal && selectedRow && (
+        <div className="tracker-modal-overlay">
+          <div className="tracker-modal-content">
+            <button
+              className="tracker-modal-close"
+              onClick={() => setOpenModal(false)}
+            >
+              ✕
+            </button>
+
+            <h4 className="tracker-modal-title">Status Breakdown</h4>
+
+            <div className="chip-group">
+              <span className="chip chip-blue">
+                Tech Transfer ID: {selectedRow.Column2}
+              </span>
+              <span className="chip chip-yellow">
+                Project ID: {selectedRow.Column3}
+              </span>
+              <span className="chip chip-green">
+                Phase: {selectedRow.Column4}
+              </span>
+              <span className="chip chip-red">
+                Shared On: {selectedRow.Column5}
+              </span>
+            </div>
+
+            <div className="table-responsive">
+              <table className="table table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Stream</th>
+                    <th>Total Required</th>
+                    <th>Yet to Initiate</th>
+                    <th className="text-warning">Draft</th>
+                    <th className="text-primary">Review</th>
+                    <th className="text-success">Approved</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>PR&amp;D</td>
+                    <td>9</td>
+                    <td>1</td>
+                    <td className="text-warning">1</td>
+                    <td className="text-primary">7</td>
+                    <td className="text-success">2</td>
+                  </tr>
+                  <tr>
+                    <td>AR&amp;D</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td className="text-warning">4</td>
+                    <td className="text-primary">1</td>
+                    <td className="text-success">1</td>
+                  </tr>
+                  <tr>
+                    <td>PE</td>
+                    <td>2</td>
+                    <td>0</td>
+                    <td className="text-warning">2</td>
+                    <td className="text-primary">0</td>
+                    <td className="text-success">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-primary"
+                onClick={() => setOpenModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default DocumentCheckList;
-
+export default Tracker;
 
 import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
+
 import Home from './components/Home/Home';
 import Login from './components/Authentication/Login';
 import Dashboard from './components/Home/Dashboard';
@@ -1007,16 +378,21 @@ import NoUrlFound from './components/NoUrlFound';
 import SharingHistory from './components/SharingHistory/SharingHistory';
 import Healthcheck from './components/Authentication/Healthcheck';
 
-// ⭐ IMPORT TRACKER FROM CORRECT FOLDER
+// ⭐ TRACKER IMPORT
 import Tracker from './components/Tracker/Tracker';
 
 const App = () => {
+  // This loading is ONLY for Dochub/document flows (used by Home.tsx)
   const [loading, setLoading] = useState(false);
+
+  // No-op loader for pages that previously used setLoader
+  const noopLoader = (_value: boolean) => {
+    // intentionally empty: we don't want to trigger the Dochub spinner
+  };
 
   return (
     <div>
       <Routes>
-
         <Route path="/login" element={<Login />} />
 
         <Route
@@ -1028,16 +404,17 @@ const App = () => {
           path="/"
           element={
             <PrivateRoute>
+              {/* Home only cares about `loading` to show the Dochub dialog */}
               <Home loading={loading} />
             </PrivateRoute>
           }
         >
-
+          {/* DASHBOARD – uses noop loader now */}
           <Route
             path="dashboard"
             element={
               <PrivateRoute>
-                <Dashboard setLoader={setLoading} />
+                <Dashboard setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
@@ -1046,7 +423,7 @@ const App = () => {
             path="masters"
             element={
               <PrivateRoute>
-                <Masters setLoader={setLoading} />
+                <Masters setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
@@ -1055,7 +432,7 @@ const App = () => {
             path="users"
             element={
               <PrivateRoute>
-                <Users setLoader={setLoading} />
+                <Users setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
@@ -1064,7 +441,7 @@ const App = () => {
             path="msds"
             element={
               <PrivateRoute>
-                <MsdsComponent setLoader={setLoading} />
+                <MsdsComponent setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
@@ -1073,7 +450,7 @@ const App = () => {
             path="Configuration"
             element={
               <PrivateRoute>
-                <ConfigurationMaster setLoader={setLoading} />
+                <ConfigurationMaster setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
@@ -1082,21 +459,22 @@ const App = () => {
             path="SharingHistory"
             element={
               <PrivateRoute>
-                <SharingHistory setLoader={setLoading} />
+                <SharingHistory setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
 
-          {/* ⭐ TRACKER ROUTE HERE */}
+          {/* ⭐ TRACKER ROUTE – also gets noop loader */}
           <Route
             path="Tracker"
             element={
               <PrivateRoute>
-                <Tracker setLoader={setLoading} />
+                <Tracker setLoader={noopLoader} />
               </PrivateRoute>
             }
           />
 
+          {/* DOCUMENT / TRANSACTION – ONLY HERE WE CONTROL THE Dochub SPINNER */}
           <Route
             path="transaction/:projectCode/:moleculePhase/:ttType/:projectName"
             element={
@@ -1105,11 +483,9 @@ const App = () => {
               </PrivateRoute>
             }
           />
-
         </Route>
 
         <Route path="*" element={<NoUrlFound />} />
-
       </Routes>
     </div>
   );
