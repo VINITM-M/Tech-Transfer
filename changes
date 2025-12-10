@@ -1,86 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../Navbar';
 import Sidebar from '../Sidebar';
 import { Outlet } from 'react-router-dom';
 import LogoutConfirmationCard from './LogoutConfirmationCard';
-import { Dialog, DialogContent, IconButton, CircularProgress } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
 
 const Home = (props: any) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const [state, setState] = useState({
-    logoutCardVisibility: '',
-    optionsCard: false,
-  });
-
-  const [openDialog, setOpenDialog] = useState(false);
-  const [minimized, setMinimized] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [loadingClass, setLoadingClass] = useState('page-loader');
 
   useEffect(() => {
-    if (props.loading) {
-      setOpenDialog(true);
-      setMinimized(false);
-    } else {
-      setOpenDialog(false);
-      setMinimized(false);
-    }
+    setLoadingClass(props.loading ? 'page-loader' : 'd-none');
   }, [props.loading]);
 
   return (
     <>
-      <Navbar onToggleSidebar={() => setSidebarOpen((p) => !p)} />
-      <Sidebar hidden={!sidebarOpen} />
+      <div className={loadingClass}>
+        <div className="spinner"></div>
+        <div className="txt">LOADING</div>
+      </div>
 
-      <section
-        className={`section_container ${
-          sidebarOpen ? 'p_Container' : 'p_Container_full'
-        }`}
-      >
+      <Navbar toggleSidebar={() => setShowSidebar(prev => !prev)} />
+
+      {showSidebar && <Sidebar />}
+
+      <section className="section_container">
         <Outlet />
       </section>
 
-      {props.loading && openDialog && !minimized && (
-        <Dialog
-          open
-          onClose={() => setMinimized(true)}
-          hideBackdrop
-          PaperProps={{ className: 'loader-dialog-paper' }}
-        >
-          <IconButton
-            onClick={() => setMinimized(true)}
-            className="dialog-close-btn"
-          >
-            <CloseIcon />
-          </IconButton>
-
-          <DialogContent>
-            <p className="loader-dialog-text">
-              Connecting to Dochub, Updating the documents …
-            </p>
-
-            <div className="dots-animation">
-              <span></span><span></span><span></span><span></span>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {props.loading && minimized && (
-        <IconButton
-          className="loader-restore-btn"
-          onClick={() => {
-            setMinimized(false);
-            setOpenDialog(true);
-          }}
-        >
-          <CircularProgress size={32} />
-        </IconButton>
-      )}
-
       <LogoutConfirmationCard
-        logoutCardVisibility={state.logoutCardVisibility}
-        cardClose={setState}
+        logoutCardVisibility=""
+        cardClose={() => {}}
       />
     </>
   );
@@ -96,7 +45,7 @@ import bars from '../assets/images/bars.png';
 import { Link, useNavigate } from 'react-router-dom';
 import ProfileCard from './Home/ProfileCard';
 
-const Navbar = ({ onToggleSidebar }: any) => {
+const Navbar = ({ toggleSidebar }: any) => {
   const navigate = useNavigate();
 
   const [state, setState] = useState({
@@ -107,7 +56,7 @@ const Navbar = ({ onToggleSidebar }: any) => {
   useEffect(() => {
     const userName = sessionStorage.getItem('username');
     const userRole = sessionStorage.getItem('userrole');
-    const dept = sessionStorage.getItem('department');
+    const department = sessionStorage.getItem('department');
 
     if (!userName) {
       sessionStorage.clear();
@@ -117,13 +66,13 @@ const Navbar = ({ onToggleSidebar }: any) => {
 
     let tag = userName;
     if (userRole === 'Process Owner') {
-      if (dept === 'ARD') tag += ' | AR&D';
-      if (dept === 'PRD') tag += ' | PR&D';
+      if (department === 'ARD') tag += ' | AR&D';
+      if (department === 'PRD') tag += ' | PR&D';
     }
 
-    const [f, l] = userName.split(' ');
+    const [first, last] = userName.split(' ');
     setState({
-      username: `${f[0]}${l ? ' ' + l[0] : ''}`.toUpperCase(),
+      username: `${first[0]}${last ? ' ' + last[0] : ''}`,
       tagName: tag,
     });
   }, []);
@@ -133,30 +82,38 @@ const Navbar = ({ onToggleSidebar }: any) => {
       <nav className="header">
         <div className="row">
           <div className="col-8 d-flex align-items-center">
-
-            <span className="bars" onClick={onToggleSidebar}>
+            <span className="bars openbtn" onClick={toggleSidebar}>
               <img src={bars} alt="menu" />
             </span>
 
-            <span className="logo">
-              <img src={companyLogo} alt="logo" />
-            </span>
+            <img src={companyLogo} alt="logo" />
+            <h5 className="ms-2">Tech Transfer</h5>
 
-            <Link to="/dashboard" className="homee">
-              <span className="home">
-                <img src={homoLogo} alt="Home" /> Home
-              </span>
+            <Link to="/dashboard" className="ms-3">
+              <img src={homoLogo} alt="home" /> Home
             </Link>
-
           </div>
 
-          <div className="col d-flex justify-content-end align-items-center userDetails">
-            <div className="admin">
-              <div className="usermain">
+          <div className="col d-flex justify-content-end align-items-center">
+            <div className="dropdown-toggle" data-bs-toggle="dropdown">
+              <div>
                 <p>{state.username}</p>
+                <span>{state.tagName}</span>
               </div>
-              <span>{state.tagName}</span>
             </div>
+
+            <ul className="dropdown-menu">
+              <li>
+                <a className="dropdown-item" data-bs-toggle="modal" data-bs-target="#profileModal">
+                  Profile
+                </a>
+              </li>
+              <li>
+                <a className="dropdown-item" data-bs-toggle="modal" data-bs-target="#logoutmodal">
+                  Logout
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </nav>
@@ -169,43 +126,43 @@ const Navbar = ({ onToggleSidebar }: any) => {
 export default Navbar;
 
 
-import React from "react";
-import { Link } from "react-router-dom";
-import folderIcon from "../assets/images/master.svg";
-import adminIcon from "../assets/images/admin.svg";
-import logoutIcon from "../assets/images/po.svg";
-import msdsIcon from "../assets/images/msds.png";
-import sharingIcon from "../assets/images/sharinghistory.svg";
-import AnalyticsIcon from "@mui/icons-material/Analytics";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import folderIcon from '../assets/images/master.svg';
+import adminIcon from '../assets/images/admin.svg';
+import logoutIcon from '../assets/images/po.svg';
+import msdsIcon from '../assets/images/msds.png';
+import sharinghistory from '../assets/images/sharinghistory.svg';
 
-const Sidebar = ({ hidden }: { hidden: boolean }) => {
-  const role = sessionStorage.getItem("userrole");
+const Sidebar = () => {
+  const role = sessionStorage.getItem('userrole');
 
   return (
-    <aside className={`p_sideNav ${hidden ? 'hidden' : ''}`}>
+    <aside className="p_sideNav">
       <div className="main">
-
-        {role === "System Owner-Admin" && (
+        {role === 'System Owner-Admin' && (
           <>
-            <Link to="/masters"><img src={folderIcon} /> Masters</Link>
-            <Link to="/users"><img src={adminIcon} /> Users</Link>
-            <Link to="/Configuration"><img src={folderIcon} /> Configuration</Link>
-            <Link to="/SharingHistory"><img src={sharingIcon} /> Sharing History</Link>
-            <Link to="/Tracker"><AnalyticsIcon /> Tracker</Link>
+            <Link to="/masters"><img src={folderIcon} /></Link>
+            <Link to="/users"><img src={adminIcon} /></Link>
+            <Link to="/Configuration"><img src={folderIcon} /></Link>
+            <Link to="/SharingHistory"><img src={sharinghistory} /></Link>
           </>
         )}
 
-        {(role === "Process Owner" || role === "QA Approver") && (
+        {(role === 'Process Owner' || role === 'QA Approver') && (
           <>
-            <Link to="/msds"><img src={msdsIcon} /> MSDS</Link>
-            <Link to="/SharingHistory"><img src={sharingIcon} /> Sharing History</Link>
+            <Link to="/msds"><img src={msdsIcon} /></Link>
+            <Link to="/SharingHistory"><img src={sharinghistory} /></Link>
           </>
         )}
       </div>
 
-      <button className="logout" data-bs-toggle="modal" data-bs-target="#logoutmodal">
-        <img src={logoutIcon} /> Logout
-      </button>
+      <img
+        src={logoutIcon}
+        className="logout"
+        data-bs-toggle="modal"
+        data-bs-target="#logoutmodal"
+      />
     </aside>
   );
 };
@@ -213,62 +170,3 @@ const Sidebar = ({ hidden }: { hidden: boolean }) => {
 export default Sidebar;
 
 
-/* ---- SIDEBAR ---- */
-.p_sideNav {
-  width: 220px;
-  position: fixed;
-  top: 56px;
-  left: 0;
-  height: calc(100vh - 56px);
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
-  z-index: 10;
-}
-
-.p_sideNav.hidden {
-  display: none;
-}
-
-.p_sideNav a {
-  display: flex;
-  gap: 10px;
-  padding: 10px 16px;
-  text-decoration: none;
-  color: #333;
-}
-
-/* ---- CONTAINER ---- */
-.p_Container {
-  margin-left: 220px;
-  padding-top: 90px;
-}
-
-.p_Container_full {
-  margin-left: 0;
-  padding-top: 90px;
-}
-
-/* ---- LOADER ---- */
-.loader-dialog-paper {
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.dots-animation {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-}
-
-.dots-animation span {
-  width: 10px;
-  height: 10px;
-  background: #00d084;
-  border-radius: 50%;
-  animation: bounce .6s infinite alternate;
-}
-
-@keyframes bounce {
-  from { transform: translateY(0); }
-  to { transform: translateY(-8px); }
-}
