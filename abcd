@@ -2427,3 +2427,185 @@ body.hide .p_Container {
   margin-left: 0px; 
   width: calc(100% - 15px); 
 }
+above files is global css file 
+
+bwlow files is tracker.css file this one fearue i added .active_breadcrumb {
+  color: #1e40af;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* ===== Container for Tracker page ===== */
+.container-fluid {
+  padding: 20px;
+}
+
+/* ===== Card / Table wrapper ===== */
+.cus-Table {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Action icon button inside table cell ===== */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.action-btn:hover {
+  background: #f3f4f6;
+}
+
+.action-btn svg {
+  font-size: 25px;
+  color: #1e40af;
+}
+
+/* ===== Tracker Modal (scoped to avoid conflict with Bootstrap) ===== */
+
+.tracker-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.tracker-modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 900px;
+  border-radius: 12px;
+  position: relative;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.tracker-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.tracker-modal-title {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* ===== Chips in Tracker modal ===== */
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* base + variants */
+.chip-blue {
+  background: #e0e7ff;
+  color: #1e40af;
+}
+
+.chip-yellow {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.chip-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.chip-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ===== Loader Dialog (Home.tsx) ===== */
+
+.loader-dialog-paper {
+  border-radius: 12px !important;
+  padding: 20px !important;
+  width: 320px !important;
+}
+
+/* Close button at top-right of dialog */
+.dialog-close-btn {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Dialog message text */
+.loader-dialog-text {
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Animated dots below the message */
+.dots-animation {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.dots-animation span {
+  width: 10px;
+  height: 10px;
+  background: #00d084;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 0.6s infinite alternate;
+}
+
+/* staggered delays for subtle rhythm */
+.dots-animation span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dots-animation span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.dots-animation span:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+/* Minimized spinner button (top-right) */
+.loader-restore-btn {
+  position: fixed !important;
+  top: 90px !important;
+  right: 30px !important;
+  z-index: 9999 !important;
+  padding: 0 !important;
+}
