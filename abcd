@@ -1,0 +1,496 @@
+import React, { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+
+import Home from './components/Home/Home';
+import Login from './components/Authentication/Login';
+import Dashboard from './components/Home/Dashboard';
+import Masters from './components/Home/Masters';
+import Users from './components/Home/Users';
+import PrivateRoute from './components/Authentication/PrivateRoute';
+import MsdsComponent from './components/Home/MsdsComponent';
+import Transaction from './components/Home/Transaction/Transaction';
+import ConfigurationMaster from './components/Configurations/ConfigurationMaster';
+import TransactionLink from './components/Home/Transaction/TransactionLink';
+import NoUrlFound from './components/NoUrlFound';
+import SharingHistory from './components/SharingHistory/SharingHistory';
+import Healthcheck from './components/Authentication/Healthcheck';
+
+// ⭐ TRACKER IMPORT
+import Tracker from './components/Tracker/Tracker';
+
+const App = () => {
+  // This loading is ONLY for Dochub/document flows (used by Home.tsx)
+  const [loading, setLoading] = useState(false);
+
+  // No-op loader for pages that previously used setLoader
+  const noopLoader = (_value: boolean) => {
+    // intentionally empty: we don't want to trigger the Dochub spinner
+  };
+
+  return (
+    <div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+
+        <Route
+          path="/transactionLink/:projectCode/:moleculePhase/:projectName"
+          element={<TransactionLink />}
+        />
+
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              {/* Home only cares about `loading` to show the Dochub dialog */}
+              <Home loading={loading} />
+            </PrivateRoute>
+          }
+        >
+          {/* DASHBOARD – uses noop loader now */}
+          <Route
+            path="dashboard"
+            element={
+              <PrivateRoute>
+                <Dashboard setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="masters"
+            element={
+              <PrivateRoute>
+                <Masters setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="users"
+            element={
+              <PrivateRoute>
+                <Users setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="msds"
+            element={
+              <PrivateRoute>
+                <MsdsComponent setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="Configuration"
+            element={
+              <PrivateRoute>
+                <ConfigurationMaster setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="SharingHistory"
+            element={
+              <PrivateRoute>
+                <SharingHistory setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          {/* ⭐ TRACKER ROUTE – also gets noop loader */}
+          <Route
+            path="Tracker"
+            element={
+              <PrivateRoute>
+                <Tracker setLoader={noopLoader} />
+              </PrivateRoute>
+            }
+          />
+
+          {/* DOCUMENT / TRANSACTION – ONLY HERE WE CONTROL THE Dochub SPINNER */}
+          <Route
+            path="transaction/:projectCode/:moleculePhase/:ttType/:projectName"
+            element={
+              <PrivateRoute>
+                <Transaction setLoading={setLoading} loading={loading} />
+              </PrivateRoute>
+            }
+          />
+        </Route>
+
+        <Route path="*" element={<NoUrlFound />} />
+      </Routes>
+    </div>
+  );
+};
+
+export default App;
+
+
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+  type MRT_ColumnDef,
+} from 'material-react-table';
+
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import './Tracker.css';
+
+type Row = {
+  Column1: string;
+  Column2: string;
+  Column3: string;
+  Column4: string;
+  Column5: string;
+  Column6: string;
+};
+
+const Tracker = ({ setLoader }: any) => {
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<Row | null>(null);
+
+  const data = useMemo<Row[]>(
+    () => [
+      {
+        Column1: '1',
+        Column2: '12',
+        Column3: '321',
+        Column4: 'Phase-I',
+        Column5: '3/12/2025 03:38 PM',
+        Column6: 'View',
+      },
+    ],
+    []
+  );
+
+  const columns = useMemo<MRT_ColumnDef<Row>[]>(
+    () => [
+      { header: 'Serial No', accessorKey: 'Column1' },
+      { header: 'Tech Transfer ID', accessorKey: 'Column2' },
+      { header: 'Project ID', accessorKey: 'Column3' },
+      { header: 'Phase of Molecules', accessorKey: 'Column4' },
+      { header: 'Shared On', accessorKey: 'Column5' },
+      {
+        header: 'Action',
+        accessorKey: 'Column6',
+        Cell: ({ row }) => {
+          const rowData = row.original;
+          return (
+            <span
+              className="action-btn"
+              onClick={() => {
+                setSelectedRow(rowData);
+                setOpenModal(true);
+              }}
+              title="View Status"
+              role="button"
+              aria-label={`View status for Tech Transfer ID ${rowData.Column2}`}
+            >
+              <VisibilityIcon />
+            </span>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  const table = useMaterialReactTable({
+    columns,
+    data,
+    enableStickyHeader: true,
+    muiTableContainerProps: { sx: { maxHeight: 400 } },
+  });
+
+  return (
+    <div className="container-fluid">
+      <Link className="active_breadcrumb" to={'/dashboard'}>
+        Dashboard
+      </Link>
+      {' / '}
+      <span>Tracker</span>
+
+      <div className="colorbox p-3">
+        <div className="row">
+          <div className="col-12">
+            <div className="card cus-Table mt-3">
+              <h5>Tracker</h5>
+              <MaterialReactTable table={table} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {openModal && selectedRow && (
+        <div className="tracker-modal-overlay">
+          <div className="tracker-modal-content">
+            <button
+              className="tracker-modal-close"
+              onClick={() => setOpenModal(false)}
+            >
+              ✕
+            </button>
+
+            <h4 className="tracker-modal-title">Status Breakdown</h4>
+
+            <div className="chip-group">
+              <span className="chip chip-blue">
+                Tech Transfer ID: {selectedRow.Column2}
+              </span>
+              <span className="chip chip-yellow">
+                Project ID: {selectedRow.Column3}
+              </span>
+              <span className="chip chip-green">
+                Phase: {selectedRow.Column4}
+              </span>
+              <span className="chip chip-red">
+                Shared On: {selectedRow.Column5}
+              </span>
+            </div>
+
+            <div className="table-responsive">
+              <table className="table table-bordered table-sm">
+                <thead>
+                  <tr>
+                    <th>Stream</th>
+                    <th>Total Required</th>
+                    <th>Yet to Initiate</th>
+                    <th className="text-warning">Draft</th>
+                    <th className="text-primary">Review</th>
+                    <th className="text-success">Approved</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>PR&amp;D</td>
+                    <td>9</td>
+                    <td>1</td>
+                    <td className="text-warning">1</td>
+                    <td className="text-primary">7</td>
+                    <td className="text-success">2</td>
+                  </tr>
+                  <tr>
+                    <td>AR&amp;D</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td className="text-warning">4</td>
+                    <td className="text-primary">1</td>
+                    <td className="text-success">1</td>
+                  </tr>
+                  <tr>
+                    <td>PE</td>
+                    <td>2</td>
+                    <td>0</td>
+                    <td className="text-warning">2</td>
+                    <td className="text-primary">0</td>
+                    <td className="text-success">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="btn btn-primary"
+                onClick={() => setOpenModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Tracker;
+
+
+/* ===== Breadcrumb (Tracker) ===== */
+.active_breadcrumb {
+  color: #1e40af;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* ===== Container for Tracker page ===== */
+.container-fluid {
+  padding: 20px;
+}
+
+/* ===== Card / Table wrapper ===== */
+.cus-Table {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Action icon button inside table cell ===== */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.action-btn:hover {
+  background: #f3f4f6;
+}
+
+.action-btn svg {
+  font-size: 25px;
+  color: #1e40af;
+}
+
+/* ===== Tracker Modal (scoped to avoid conflict with Bootstrap) ===== */
+
+.tracker-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.tracker-modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 900px;
+  border-radius: 12px;
+  position: relative;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.tracker-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  font-size: 24px;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.tracker-modal-title {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* ===== Chips in Tracker modal ===== */
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* base + variants */
+.chip-blue {
+  background: #e0e7ff;
+  color: #1e40af;
+}
+
+.chip-yellow {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.chip-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.chip-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ===== Loader Dialog (Home.tsx) ===== */
+
+.loader-dialog-paper {
+  border-radius: 12px !important;
+  padding: 20px !important;
+  width: 320px !important;
+}
+
+/* Close button at top-right of dialog */
+.dialog-close-btn {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Dialog message text */
+.loader-dialog-text {
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Animated dots below the message */
+.dots-animation {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.dots-animation span {
+  width: 10px;
+  height: 10px;
+  background: #00d084;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 0.6s infinite alternate;
+}
+
+/* staggered delays for subtle rhythm */
+.dots-animation span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dots-animation span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.dots-animation span:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+/* Minimized spinner button (top-right) */
+.loader-restore-btn {
+  position: fixed !important;
+  top: 90px !important;
+  right: 30px !important;
+  z-index: 9999 !important;
+  padding: 0 !important;
+}
